@@ -327,33 +327,74 @@
     return casas;
   }
 
-  function desenharRota(g, r, corJogador, brilho) {
-    casasDaRota(r).forEach(function (c) {
+  // parte: 'faixa' (só o destaque por baixo), 'vagoes' (só os vagões) ou nada (tudo)
+  function desenharRota(g, r, corJogador, brilho, parte) {
+    var casas = casasDaRota(r);
+    if (corJogador && parte !== 'vagoes') {
+      // rota ocupada: faixa larga (escura por fora, branca por dentro) por baixo dos vagões, para destacar do mapa
+      var ini = casas[0];
+      var fim = casas[casas.length - 1];
+      var meio = ini.comp / 2;
+      var x1 = X(ini.x - Math.cos(ini.ang) * meio);
+      var y1 = Y(ini.y - Math.sin(ini.ang) * meio);
+      var x2 = X(fim.x + Math.cos(fim.ang) * meio);
+      var y2 = Y(fim.y + Math.sin(fim.ang) * meio);
+      g.lineCap = 'butt'; // não avança sobre a bolinha da cidade
+      g.strokeStyle = 'rgba(15,23,42,0.85)';
+      g.lineWidth = 29 * view.s;
+      g.beginPath();
+      g.moveTo(x1, y1);
+      g.lineTo(x2, y2);
+      g.stroke();
+      g.strokeStyle = brilho ? '#fde047' : '#ffffff';
+      g.lineWidth = 24 * view.s;
+      g.stroke();
+    }
+    if (parte === 'faixa') return;
+    casas.forEach(function (c) {
       g.save();
       g.translate(X(c.x), Y(c.y));
       g.rotate(c.ang);
       var w = c.comp * view.s;
-      var h = 13 * view.s;
       if (corJogador) {
-        // vagão do jogador: corpo, janelas e rodinhas
-        g.fillStyle = 'rgba(0,0,0,0.35)';
-        g.fillRect(-w / 2 + 2, -h / 2 + 3, w, h);
+        // vagão do jogador: maior, com borda escura, janelas e rodinhas
+        var h = 18 * view.s;
         g.fillStyle = corJogador;
-        g.fillRect(-w / 2, -h / 2 - 1, w, h + 2);
-        g.strokeStyle = brilho ? '#fff' : 'rgba(0,0,0,0.6)';
-        g.lineWidth = brilho ? 3 : 1.5;
-        g.strokeRect(-w / 2, -h / 2 - 1, w, h + 2);
-        g.fillStyle = 'rgba(255,255,255,0.7)';
-        for (var k = -1; k <= 1; k++) g.fillRect(k * w * 0.25 - w * 0.07, -h * 0.25, w * 0.14, h * 0.4);
+        g.strokeStyle = '#0f172a';
+        g.lineWidth = Math.max(2, 2.5 * view.s);
+        arredondado(g, -w / 2, -h / 2, w, h, h * 0.25);
+        g.fill();
+        g.stroke();
+        g.fillStyle = 'rgba(255,255,255,0.85)';
+        for (var k = -1; k <= 1; k++) g.fillRect(k * w * 0.26 - w * 0.08, -h * 0.28, w * 0.16, h * 0.34);
+        g.fillStyle = '#0f172a';
+        g.beginPath();
+        g.arc(-w * 0.3, h * 0.5, h * 0.14, 0, Math.PI * 2);
+        g.arc(w * 0.3, h * 0.5, h * 0.14, 0, Math.PI * 2);
+        g.fill();
       } else {
+        // rota livre: um pouco mais apagada, para os trens se destacarem
+        var hl = 12 * view.s;
+        g.globalAlpha = 0.8;
         g.fillStyle = CORES_CARTA[r.cor];
-        g.strokeStyle = 'rgba(0,0,0,0.55)';
+        g.strokeStyle = 'rgba(0,0,0,0.5)';
         g.lineWidth = 1.5;
-        g.fillRect(-w / 2, -h / 2, w, h);
-        g.strokeRect(-w / 2, -h / 2, w, h);
+        g.fillRect(-w / 2, -hl / 2, w, hl);
+        g.strokeRect(-w / 2, -hl / 2, w, hl);
+        g.globalAlpha = 1;
       }
       g.restore();
     });
+  }
+
+  function arredondado(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
   }
 
   function desenharCidade(g, c) {
@@ -413,14 +454,19 @@
     ctx.drawImage(fundo, 0, 0, view.w, view.h);
     if (!publico) return;
 
-    // rotas ocupadas
+    // rotas ocupadas: primeiro todas as faixas, depois os vagões, e as cidades por cima de tudo
     var donas = publico.donas || {};
-    for (var id in donas) {
-      var r = MAPA.rotas[id];
-      var j = publico.jogadores[donas[id]];
-      var brilho = destaque && destaque.id === Number(id) && agora - destaque.t < 4000 && Math.floor((agora - destaque.t) / 250) % 2 === 0;
-      desenharRota(ctx, r, j.cor, brilho);
-    }
+    var ids = Object.keys(donas);
+    ['faixa', 'vagoes'].forEach(function (parte) {
+      ids.forEach(function (id) {
+        var r = MAPA.rotas[id];
+        var j = publico.jogadores[donas[id]];
+        if (!r || !j) return;
+        var brilho = destaque && destaque.id === Number(id) && agora - destaque.t < 4000 && Math.floor((agora - destaque.t) / 250) % 2 === 0;
+        desenharRota(ctx, r, j.cor, brilho, parte);
+      });
+    });
+    if (ids.length) MAPA.cidades.forEach(function (cd) { desenharCidade(ctx, cd); });
 
     // painel dos jogadores (direita)
     var px = view.w - view.painel;
