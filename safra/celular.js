@@ -43,6 +43,7 @@
 
   SALA.iniciarCelular({
     jogo: 'safra',
+    video: true,
     desenhar: function (api) {
       var pub = api.publico;
       var eu = pub.jogadores[api.idx];

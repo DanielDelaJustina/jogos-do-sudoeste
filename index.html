@@ -22,6 +22,13 @@
     .jogo p { margin: 0 0 1.5vh; color: #cbd5e1; font-size: clamp(14px, 2.1vh, 19px); line-height: 1.45; flex: 1; }
     .jogo .info { font-size: clamp(13px, 1.9vh, 17px); color: #fde68a; font-weight: 700; }
     .jogo .abrir { margin-top: 1.5vh; background: var(--c); color: #fff; text-align: center; border-radius: 12px; padding: 1.4vh; font-weight: 800; font-size: clamp(16px, 2.4vh, 22px); }
+    /* cartão com vídeo: o cartão vira um div com dois links (abrir o jogo e ver o vídeo) */
+    .jogo.com-video:hover, .jogo.com-video:focus-within { transform: none; outline: none; }
+    .entrar-jogo { flex: 1; display: flex; flex-direction: column; text-decoration: none; color: inherit; }
+    .entrar-jogo:hover, .entrar-jogo:focus { outline: 4px solid #fde047; outline-offset: -4px; border-radius: 17px 17px 0 0; }
+    .jogo .video { display: block; margin: 0 22px 2.5vh; padding: 1.2vh; text-align: center; text-decoration: none; color: #fde68a; font-weight: 700;
+      font-size: clamp(14px, 2.1vh, 19px); border: 2px solid var(--c); border-radius: 12px; }
+    .jogo .video:hover, .jogo .video:focus { outline: 4px solid #fde047; }
     .celular { text-align: center; margin-top: 4vh; }
     .celular a { text-decoration: none; }
     .celular .botao { display: inline-block; width: auto; padding: 14px 28px; }
@@ -44,15 +51,18 @@
         <div class="abrir">Abrir na TV</div>
       </div>
     </a>
-    <a class="jogo" href="safra/tv.html?nova=1" style="--c:#15803d">
-      <div class="capa">🌽</div>
-      <div class="corpo">
-        <h2>Safra do Sudoeste</h2>
-        <p>Junte leite, milho, soja, suíno e erva-mate, abra negócios que dão desconto e receba as feiras das cidades. Primeiro a 15 pontos fecha a rodada.</p>
-        <div class="info">2 a 4 jogadores · ~30 min</div>
-        <div class="abrir">Abrir na TV</div>
-      </div>
-    </a>
+    <div class="jogo com-video" style="--c:#15803d">
+      <a class="entrar-jogo" href="safra/tv.html?nova=1">
+        <div class="capa">🌽</div>
+        <div class="corpo">
+          <h2>Safra do Sudoeste</h2>
+          <p>Junte leite, milho, soja, suíno e erva-mate, abra negócios que dão desconto e receba as feiras das cidades. Primeiro a 15 pontos fecha a rodada.</p>
+          <div class="info">2 a 4 jogadores · ~30 min</div>
+          <div class="abrir">Abrir na TV</div>
+        </div>
+      </a>
+      <a class="video" href="video.html?jogo=safra">▶ Vídeo: como jogar (3 min)</a>
+    </div>
     <a class="jogo" href="expedicao/tv.html?nova=1" style="--c:#0e7490">
       <div class="capa">🧭</div>
       <div class="corpo">

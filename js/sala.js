@@ -131,7 +131,7 @@
   }
 
   // ================= Celular =================
-  // cfg = { jogo, nomeJogo, desenhar(api) } ; api.publico, api.minha, api.idx, api.enviar(acao), api.opcoes(fim) ...
+  // cfg = { jogo, nomeJogo, video (tem <jogo>/como-jogar.mp4), desenhar(api) } ; api.publico, api.minha, api.idx, api.enviar(acao), api.opcoes(fim) ...
   function iniciarCelular(cfg) {
     var tela = document.getElementById('tela');
     var params = new URLSearchParams(location.search);
@@ -220,6 +220,10 @@
       } else {
         html += '<div class="vez minha">Você entrou! Esperando o início...</div>' +
           '<button class="botao sec" data-op="nome">Mudar meu nome</button><button class="botao sec" data-op="sair">Sair da sala</button>';
+      }
+      if (cfg.video) {
+        var de = encodeURIComponent(cfg.jogo + '/celular.html?sala=' + sala);
+        html += '<a class="botao sec" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box" href="../video.html?jogo=' + cfg.jogo + '&de=' + de + '">▶ Vídeo: como jogar</a>';
       }
       html += '<h3>Na sala</h3>';
       (publico.jogadores || []).forEach(function (j) {

@@ -1,0 +1,6 @@
+{
+  "name": "video-como-jogar",
+  "private": true,
+  "description": "Gera o vídeo 'como jogar': node capturar.js (prints de uma partida real) e depois node render.js (monta o MP4 com as legendas de cenas.js). Sai em safra-como-jogar.mp4; copiar para safra/como-jogar.mp4.",
+  "dependencies": { "mp4-muxer": "^5.2.2", "puppeteer-core": "^23.11.1" }
+}

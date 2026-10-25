@@ -1,2 +1,6 @@
 .claude/
 node_modules/
+ferramentas/video/shots/
+ferramentas/video/*.mp4
+ferramentas/video/*.png
+ferramentas/video/package-lock.json

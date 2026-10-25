@@ -1,0 +1,342 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;background:#000">
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="node_modules/mp4-muxer/build/mp4-muxer.js"></script>
+<script src="cenas.js"></script>
+<script>
+var W = 1920, H = 1080, FPS = 30, FADE = 0.5;
+var cv = document.getElementById('c');
+var ctx = cv.getContext('2d');
+var IMG = {};
+var FONTE = '"Segoe UI", "Segoe UI Emoji", sans-serif';
+
+function carregar() {
+  var nomes = {};
+  CENAS.forEach(function (c) { if (c.tv) nomes[c.tv] = 1; if (c.cel) nomes[c.cel] = 1; });
+  return Promise.all(Object.keys(nomes).map(function (n) {
+    return new Promise(function (ok, erro) {
+      var i = new Image();
+      i.onload = function () { IMG[n] = i; ok(); };
+      i.onerror = erro;
+      i.src = 'shots/' + n + '.png';
+    });
+  }));
+}
+
+// tempo de cada cena e passo
+var linha = [];
+var total = 0;
+CENAS.forEach(function (c) {
+  var ini = total;
+  var t = 0;
+  c.passos.forEach(function (p) { p.ini = t; t += p.d; });
+  c.ini = ini;
+  c.dur = t;
+  total += t;
+});
+
+function suave(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+function caixa(x, y, w, h, r, junto) {
+  if (!junto) ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function quebrar(txt, larg) {
+  var palavras = txt.split(' ');
+  var linhas = [];
+  var atual = '';
+  palavras.forEach(function (p) {
+    var teste = atual ? atual + ' ' + p : p;
+    if (ctx.measureText(teste).width > larg && atual) { linhas.push(atual); atual = p; } else atual = teste;
+  });
+  if (atual) linhas.push(atual);
+  return linhas;
+}
+
+// layout das áreas (TV e celular) conforme o que a cena tem
+var CEL_H = 860, CEL_W = Math.round(CEL_H * 390 / 844);
+function layout(c) {
+  if (c.tv && c.cel) {
+    var tw = W - CEL_W - 3 * 45;
+    return { tv: { x: 45, y: 40 + (CEL_H - tw * 9 / 16) / 2, w: tw, h: tw * 9 / 16 }, cel: { x: W - 45 - CEL_W, y: 40, w: CEL_W, h: CEL_H } };
+  }
+  if (c.tv) {
+    var h = 850, w = h * 16 / 9;
+    return { tv: { x: (W - w) / 2, y: 45, w: w, h: h } };
+  }
+  return { cel: { x: (W - CEL_W) / 2, y: 40, w: CEL_W, h: CEL_H } };
+}
+
+function passoEm(c, t) {
+  var i = 0;
+  for (var k = 0; k < c.passos.length; k++) if (t >= c.passos[k].ini) i = k;
+  return i;
+}
+
+// janela da TV (zoom) e rolagem do celular, animadas entre passos
+function estadoCena(c, t) {
+  var i = passoEm(c, t);
+  var p = c.passos[i];
+  var ant = i > 0 ? c.passos[i - 1] : null;
+  var k = suave((t - p.ini) / 0.9);
+  var cheio = { x: 0, y: 0, w: 1600, h: 900 };
+  function janela(z) {
+    if (!z) return cheio;
+    // mantém 16:9 com folga em volta
+    var w = Math.max(z.w * 1.12, z.h * 1.12 * 16 / 9), h = w * 9 / 16;
+    var x = Math.max(0, Math.min(1600 - w, z.x + z.w / 2 - w / 2)), y = Math.max(0, Math.min(900 - h, z.y + z.h / 2 - h / 2));
+    return { x: x, y: y, w: w, h: h };
+  }
+  var a = janela(ant && ant.zoom), b = janela(p.zoom);
+  var jan = { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, w: a.w + (b.w - a.w) * k, h: a.h + (b.h - a.h) * k };
+  var ra = ant && ant.rolar !== undefined ? ant.rolar : (p.rolar || 0);
+  var rb = p.rolar || 0;
+  var kr = suave((t - p.ini) / 1.2);
+  return { i: i, p: p, jan: jan, rolar: ra + (rb - ra) * kr, kHl: suave((t - p.ini - (p.rolar !== undefined && ra !== rb ? 1.1 : 0.3)) / 0.4) };
+}
+
+function destaque(r, alfa, t) {
+  var pulso = 0.75 + 0.25 * Math.sin(t * 5);
+  ctx.save();
+  ctx.globalAlpha = alfa * pulso;
+  ctx.shadowColor = '#fde047';
+  ctx.shadowBlur = 25;
+  ctx.strokeStyle = '#fde047';
+  ctx.lineWidth = 6;
+  caixa(r.x, r.y, r.w, r.h, 14);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// escurece em volta das áreas destacadas
+function holofote(area, rets, alfa) {
+  if (!rets.length) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(area.x, area.y, area.w, area.h);
+  rets.forEach(function (r) { caixa(r.x, r.y, r.w, r.h, 14, true); });
+  ctx.clip('evenodd');
+  ctx.fillStyle = 'rgba(0,0,0,' + (0.5 * alfa) + ')';
+  ctx.fillRect(area.x, area.y, area.w, area.h);
+  ctx.restore();
+}
+
+function desenharCena(c, t) {
+  ctx.fillStyle = '#0b111b';
+  ctx.fillRect(0, 0, W, H);
+  var g = ctx.createRadialGradient(W / 2, H * 0.4, 100, W / 2, H * 0.4, W * 0.7);
+  g.addColorStop(0, '#1e2b40');
+  g.addColorStop(1, '#0b111b');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  if (c.titulo) return titulo(t);
+  if (c.resumo) return resumo(t);
+
+  var L = layout(c);
+  var e = estadoCena(c, t);
+  var hl = e.p.hl || [];
+
+  if (c.tv) {
+    var a = L.tv, j = e.jan;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 40;
+    ctx.fillStyle = '#000';
+    caixa(a.x - 14, a.y - 14, a.w + 28, a.h + 28, 18);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    caixa(a.x, a.y, a.w, a.h, 6);
+    ctx.clip();
+    ctx.drawImage(IMG[c.tv], j.x, j.y, j.w, j.h, a.x, a.y, a.w, a.h);
+    var s = a.w / j.w;
+    var rets = hl.filter(function (h) { return h.em === 'tv'; }).map(function (h) {
+      return { x: a.x + (h.x - j.x) * s, y: a.y + (h.y - j.y) * s, w: h.w * s, h: h.h * s };
+    });
+    holofote(a, rets, e.kHl);
+    rets.forEach(function (r) { destaque(r, e.kHl, t); });
+    ctx.restore();
+  }
+  if (c.cel) {
+    var b = L.cel;
+    var img = IMG[c.cel];
+    var esc = b.w / 390;
+    var maxRol = img.height / 2 - 844;
+    var rol = Math.max(0, Math.min(maxRol, e.rolar));
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 40;
+    ctx.fillStyle = '#05070a';
+    caixa(b.x - 14, b.y - 14, b.w + 28, b.h + 28, 46);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    caixa(b.x - 14, b.y - 14, b.w + 28, b.h + 28, 46);
+    ctx.stroke();
+    ctx.save();
+    caixa(b.x, b.y, b.w, b.h, 34);
+    ctx.clip();
+    ctx.drawImage(img, 0, rol * 2, 780, 844 * 2, b.x, b.y, b.w, b.h);
+    var retsC = hl.filter(function (h) { return h.em === 'cel'; }).map(function (h) {
+      return { x: b.x + h.x * esc, y: b.y + (h.y - rol) * esc, w: h.w * esc, h: h.h * esc };
+    });
+    holofote(b, retsC, e.kHl);
+    retsC.forEach(function (r) { destaque(r, e.kHl, t); });
+    ctx.restore();
+  }
+  legenda(c, e, t);
+}
+
+function legenda(c, e, t) {
+  var p = e.p;
+  if (!p.cap) return;
+  var aIn = suave((t - p.ini) / 0.35);
+  var aOut = suave((p.ini + p.d - t) / 0.3);
+  if (e.i === c.passos.length - 1) aOut = 1;
+  ctx.save();
+  ctx.globalAlpha = Math.min(aIn, aOut);
+  ctx.font = '600 40px ' + FONTE;
+  var linhas = quebrar(p.cap, W - 260);
+  var alt = linhas.length * 52 + 34;
+  var y0 = H - alt - 22;
+  ctx.fillStyle = 'rgba(8,12,20,0.92)';
+  caixa(90, y0, W - 180, alt, 18);
+  ctx.fill();
+  ctx.fillStyle = '#16a34a';
+  caixa(90, y0, 12, alt, 6);
+  ctx.fill();
+  ctx.fillStyle = '#f8fafc';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'center';
+  linhas.forEach(function (l, k) { ctx.fillText(l, W / 2, y0 + 20 + k * 52); });
+  ctx.restore();
+}
+
+function titulo(t) {
+  var a = suave(t / 0.8);
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '150px ' + FONTE;
+  ctx.fillText('🌽', W / 2, 330);
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 110px ' + FONTE;
+  ctx.fillText('Safra do Sudoeste', W / 2, 520);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = '48px ' + FONTE;
+  ctx.fillText('Como jogar — com as telas de uma partida de verdade', W / 2, 640);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '38px ' + FONTE;
+  ctx.fillText('A mesa fica na TV · cada um joga pelo celular · 2 a 4 jogadores', W / 2, 730);
+  ctx.restore();
+}
+
+function resumo(t) {
+  var itens = [
+    ['🎯', 'Na sua vez, só UMA ação: pegar produtos, reservar ou comprar.'],
+    ['🏭', 'Cada negócio comprado dá pontos e desconto para sempre.'],
+    ['🎪', 'Feiras visitam sozinhas quem junta os negócios pedidos: +3.'],
+    ['🏁', 'Chegou a 15 pontos? Última rodada. Ganha quem tiver mais.'],
+  ];
+  ctx.save();
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha = suave(t / 0.6);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 80px ' + FONTE;
+  ctx.fillText('Resumindo', W / 2, 150);
+  ctx.restore();
+  itens.forEach(function (it, k) {
+    var a = suave((t - 0.6 - k * 0.7) / 0.5);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate((1 - a) * 40, 0);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.font = '64px ' + FONTE;
+    ctx.fillText(it[0], 260, 300 + k * 130);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.font = '600 46px ' + FONTE;
+    ctx.fillText(it[1], 370, 300 + k * 130);
+    ctx.restore();
+  });
+  var a2 = suave((t - 3.8) / 0.6);
+  ctx.save();
+  ctx.globalAlpha = a2;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#16a34a';
+  caixa(W / 2 - 720, 860, 1440, 120, 24);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 50px ' + FONTE;
+  ctx.fillText('danieldelajustina.github.io/jogos-do-sudoeste', W / 2, 920);
+  ctx.restore();
+}
+
+function quadro(tempo) {
+  // acha a cena atual e faz a transição (fade) com a próxima
+  for (var k = 0; k < CENAS.length; k++) {
+    var c = CENAS[k];
+    if (tempo < c.ini + c.dur || k === CENAS.length - 1) {
+      var t = tempo - c.ini;
+      desenharCena(c, t);
+      var resta = c.ini + c.dur - tempo;
+      if (resta < FADE && k < CENAS.length - 1) {
+        // escurece para a próxima
+        ctx.fillStyle = 'rgba(11,17,27,' + suave(1 - resta / FADE) + ')';
+        ctx.fillRect(0, 0, W, H);
+      } else if (t < FADE && k > 0) {
+        ctx.fillStyle = 'rgba(11,17,27,' + (1 - suave(t / FADE)) + ')';
+        ctx.fillRect(0, 0, W, H);
+      }
+      return;
+    }
+  }
+}
+
+async function gravar() {
+  await carregar();
+  var codecs = ['avc1.640028', 'avc1.4d0028', 'avc1.42002a'];
+  var cfg = null;
+  for (var i = 0; i < codecs.length; i++) {
+    var teste = { codec: codecs[i], width: W, height: H, bitrate: 1000000, bitrateMode: 'variable', framerate: FPS, latencyMode: 'quality', avc: { format: 'avc' } };
+    var r = await VideoEncoder.isConfigSupported(teste);
+    if (r.supported) { cfg = teste; break; }
+  }
+  if (!cfg) throw new Error('sem H.264');
+  var muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H, frameRate: FPS }, fastStart: 'in-memory' });
+  var enc = new VideoEncoder({ output: function (ch, meta) { muxer.addVideoChunk(ch, meta); }, error: function (e) { throw e; } });
+  enc.configure(cfg);
+  var n = Math.ceil(total * FPS);
+  for (var f = 0; f < n; f++) {
+    quadro(f / FPS);
+    var vf = new VideoFrame(cv, { timestamp: Math.round(f * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(vf, { keyFrame: f % (FPS * 5) === 0 });
+    vf.close();
+    if (enc.encodeQueueSize > 10) await new Promise(function (ok) { enc.addEventListener('dequeue', ok, { once: true }); });
+  }
+  await enc.flush();
+  muxer.finalize();
+  var buf = new Uint8Array(muxer.target.buffer);
+  var PED = 1 << 20;
+  for (var o = 0; o < buf.length; o += PED) {
+    var parte = buf.subarray(o, o + PED);
+    var s = '';
+    for (var k = 0; k < parte.length; k += 0x8000) s += String.fromCharCode.apply(null, parte.subarray(k, k + 0x8000));
+    await window.salvarParte(btoa(s));
+  }
+  return { bytes: buf.length, segundos: total, codec: cfg.codec };
+}
+window.quadro = quadro;
+window.carregar = carregar;
+window.TOTAL = total;
+</script>
+</body></html>

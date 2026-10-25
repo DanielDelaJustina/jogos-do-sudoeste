@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogos do Sudoeste · Como jogar</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <style>
+    body { margin: 0; background: #000; min-height: 100vh; display: flex; flex-direction: column; }
+    .barra { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: #0f1720; }
+    .barra a { color: #fde68a; text-decoration: none; font-weight: 700; font-size: 18px; padding: 8px 14px; border: 2px solid #475569; border-radius: 10px; white-space: nowrap; }
+    .barra a:focus, .barra a:hover { outline: 3px solid #fde047; }
+    .barra b { color: #e2e8f0; font-size: 18px; }
+    video { flex: 1; width: 100%; min-height: 0; max-height: calc(100vh - 64px); background: #000; }
+  </style>
+</head>
+<body>
+  <div class="barra"><a id="voltar" href="./">← Voltar</a><b id="titulo">Como jogar</b></div>
+  <video id="video" controls autoplay playsinline preload="auto"></video>
+  <script>
+    // vídeo "como jogar" de cada jogo: video.html?jogo=safra (o arquivo fica em <jogo>/como-jogar.mp4)
+    (function () {
+      var JOGOS = { safra: 'Safra do Sudoeste' };
+      var params = new URLSearchParams(location.search);
+      var jogo = params.get('jogo');
+      if (!JOGOS[jogo]) {
+        location.href = './';
+        return;
+      }
+      document.getElementById('titulo').textContent = 'Como jogar · ' + JOGOS[jogo];
+      document.getElementById('video').src = jogo + '/como-jogar.mp4';
+      // volta para onde a pessoa estava (a mesa da TV ou o celular continuam na mesma sala)
+      var voltar = document.getElementById('voltar');
+      var de = params.get('de');
+      if (de && /^[a-z]+\/(tv|celular)\.html(\?sala=[A-Z0-9]{5})?$/.test(de)) voltar.href = de;
+      voltar.focus();
+    })();
+  </script>
+</body>
+</html>
