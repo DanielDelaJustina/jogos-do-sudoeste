@@ -99,7 +99,7 @@
     }
     if (publico.fase === 'sala') return telaSala(idx);
     if (idx === null) {
-      tela.innerHTML = '<p>Essa partida já começou sem você. Espere a próxima!</p>';
+      tela.innerHTML = '<p>Essa partida já começou sem você.</p><p class="dica">Peça para o primeiro jogador tocar em "Encerrar partida e voltar para a sala" no celular dele. Aí você consegue entrar.</p>';
       return;
     }
     if (publico.fase === 'fim') return telaFim(idx);
@@ -117,7 +117,9 @@
       html += '<h3>Seu nome</h3><input class="nome" id="nome" maxlength="14" placeholder="Como quer aparecer na TV" value="' + esc(ls('trilhosNome') || '') + '">' +
         '<button class="botao" id="entrar">Entrar na partida</button>';
     } else {
-      html += '<div class="vez minha">Você entrou! Esperando o início...</div>';
+      html += '<div class="vez minha">Você entrou! Esperando o início...</div>' +
+        '<button class="botao sec" id="mudarNome">Mudar meu nome</button>' +
+        '<button class="botao sec" id="sair">Sair da sala</button>';
     }
     html += '<h3>Na sala</h3>';
     (publico.jogadores || []).forEach(function (j) {
@@ -139,22 +141,151 @@
     }
     var c = document.getElementById('comecar');
     if (c) c.onclick = function () { c.disabled = true; enviar({ tipo: 'comecar' }); };
+    var s = document.getElementById('sair');
+    if (s) {
+      s.onclick = function () {
+        if (!confirm('Sair da sala?')) return;
+        s.disabled = true;
+        enviar({ tipo: 'sair' });
+      };
+    }
+    ligarOpcoes(false);
   }
 
-  function bilheteHtml(id, extra) {
+  // ---------- opções: trocar nome e (para o Jogador 1) encerrar a partida ----------
+
+  function opcoesHtml(idx, fim) {
+    var html = '<h3>Opções</h3><button class="botao sec" id="mudarNome">Mudar meu nome</button>';
+    if (idx === 0) {
+      html += '<button class="botao sec" id="voltarSala">' + (fim ? 'Nova partida (voltar para a sala)' : 'Encerrar partida e voltar para a sala') + '</button>' +
+        '<p class="dica">Na sala dá para outras pessoas entrarem antes de começar de novo.</p>';
+    } else {
+      html += '<p class="dica">Para encerrar ou recomeçar, o primeiro jogador usa o botão nas opções dele.</p>';
+    }
+    return html;
+  }
+
+  function ligarOpcoes(fim) {
+    var m = document.getElementById('mudarNome');
+    if (m) {
+      m.onclick = function () {
+        var idx = eu();
+        var atual = idx === null ? '' : publico.jogadores[idx].nome;
+        var nome = prompt('Seu nome (até 14 letras):', atual);
+        if (!nome || !nome.trim()) return;
+        ls('trilhosNome', nome.trim());
+        enviar({ tipo: 'renomear', nome: nome.trim() });
+      };
+    }
+    var v = document.getElementById('voltarSala');
+    if (v) {
+      v.onclick = function () {
+        if (!fim && !confirm('Encerrar a partida para todos e voltar para a sala?')) return;
+        v.disabled = true;
+        enviar({ tipo: 'voltarSala' });
+      };
+    }
+  }
+
+  // cada bilhete tem uma cor no mapinha (bolinha igual aparece no bilhete)
+  var CORES_BILHETE = ['#e11d48', '#2563eb', '#d97706', '#059669', '#9333ea', '#0891b2', '#db2777', '#65a30d', '#7c2d12', '#4f46e5'];
+
+  function bilheteHtml(id, extra, marca) {
     var b = MAPA.bilhetes[id];
-    return cidade(b.a) + ' → ' + cidade(b.b) + '<span class="pts">' + b.pontos + '</span>' + (extra || '');
+    return (marca ? '<span class="marca" style="background:' + marca + '"></span>' : '') +
+      cidade(b.a) + ' → ' + cidade(b.b) + '<span class="pts">' + b.pontos + '</span>' + (extra || '');
+  }
+
+  // mapinha só no seu celular: rotas, trens já colocados e as cidades dos seus bilhetes
+  function desenharMiniMapa(canvas, bilhetes) {
+    var w = canvas.clientWidth || 360;
+    var h = Math.round((w * MAPA.altura) / MAPA.largura);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + 'px';
+    var g = canvas.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var s = w / MAPA.largura;
+    function P(c) { return [c.x * s, c.y * s]; }
+    g.fillStyle = '#6b9a45';
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#3b82c4';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(0, 18 * s);
+    g.lineTo(w, 12 * s);
+    g.stroke();
+    var donas = (publico && publico.donas) || {};
+    MAPA.rotas.forEach(function (r) {
+      var a = P(MAPA.cidades[r.a]);
+      var b = P(MAPA.cidades[r.b]);
+      var dona = donas[r.id];
+      g.strokeStyle = dona !== undefined ? publico.jogadores[dona].cor : 'rgba(255,255,255,0.35)';
+      g.lineWidth = dona !== undefined ? 4 : 1.5;
+      g.beginPath();
+      g.moveTo(a[0], a[1]);
+      g.lineTo(b[0], b[1]);
+      g.stroke();
+    });
+    MAPA.cidades.forEach(function (c) {
+      var p = P(c);
+      g.fillStyle = '#fff7ed';
+      g.beginPath();
+      g.arc(p[0], p[1], 2.5, 0, Math.PI * 2);
+      g.fill();
+    });
+    g.font = 'bold 10px sans-serif';
+    g.textAlign = 'center';
+    bilhetes.forEach(function (bt) {
+      var b = MAPA.bilhetes[bt.id];
+      var A = P(MAPA.cidades[b.a]);
+      var B = P(MAPA.cidades[b.b]);
+      g.strokeStyle = bt.cor;
+      g.lineWidth = 2.5;
+      g.setLineDash([5, 4]);
+      g.beginPath();
+      g.moveTo(A[0], A[1]);
+      g.lineTo(B[0], B[1]);
+      g.stroke();
+      g.setLineDash([]);
+      [[A, b.a], [B, b.b]].forEach(function (pc) {
+        g.fillStyle = bt.cor;
+        g.strokeStyle = '#fff';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.arc(pc[0][0], pc[0][1], 6, 0, Math.PI * 2);
+        g.fill();
+        g.stroke();
+        var nome = cidade(pc[1]);
+        var ty = pc[0][1] - 9;
+        g.lineWidth = 3;
+        g.strokeStyle = 'rgba(0,0,0,0.75)';
+        g.strokeText(nome, Math.min(w - 30, Math.max(30, pc[0][0])), Math.max(10, ty));
+        g.fillStyle = '#fff';
+        g.fillText(nome, Math.min(w - 30, Math.max(30, pc[0][0])), Math.max(10, ty));
+      });
+    });
   }
 
   function telaBilhetes() {
     var html = '<div class="vez minha">Escolha seus bilhetes de destino</div>' +
-      '<p>Ligue as duas cidades com seus trens até o fim do jogo para ganhar os pontos. Se não ligar, perde os pontos! Fique com pelo menos <b>' + minha.minimo + '</b>.</p>';
-    minha.pendentes.forEach(function (id) {
+      '<p>Ligue as duas cidades com seus trens até o fim do jogo para ganhar os pontos. Se não ligar, perde os pontos! Fique com pelo menos <b>' + minha.minimo + '</b>.</p>' +
+      '<canvas class="minimapa" id="mini"></canvas>';
+    var marcados = [];
+    minha.pendentes.forEach(function (id, i) {
       if (escolha[id] === undefined) escolha[id] = true;
-      html += '<div class="bilhete"><label><input type="checkbox" data-b="' + id + '"' + (escolha[id] ? ' checked' : '') + '>' + bilheteHtml(id) + '</label></div>';
+      var cor = CORES_BILHETE[i % CORES_BILHETE.length];
+      marcados.push({ id: id, cor: cor });
+      html += '<div class="bilhete"><label><input type="checkbox" data-b="' + id + '"' + (escolha[id] ? ' checked' : '') + '>' + bilheteHtml(id, '', cor) + '</label></div>';
     });
-    html += '<button class="botao" id="confirmar">Confirmar</button>';
+    if (minha.bilhetes && minha.bilhetes.length) {
+      html += '<p class="dica">Você já tem: ' + minha.bilhetes.map(function (b) { var x = MAPA.bilhetes[b.id]; return cidade(x.a) + ' → ' + cidade(x.b); }).join(', ') + '</p>';
+    }
+    html += '<button class="botao" id="confirmar">Confirmar</button>' + opcoesHtml(eu(), false);
     tela.innerHTML = html;
+    desenharMiniMapa(document.getElementById('mini'), marcados);
+    ligarOpcoes(false);
     tela.querySelectorAll('[data-b]').forEach(function (cb) {
       cb.onchange = function () { escolha[cb.getAttribute('data-b')] = cb.checked; };
     });
@@ -220,10 +351,17 @@
     });
     if (!temCarta) html += '<p class="dica">Sem cartas.</p>';
     html += '</div><h3>Meus bilhetes</h3>';
-    (minha.bilhetes || []).forEach(function (b) {
-      html += '<div class="bilhete' + (b.ok ? ' ok' : '') + '">' + bilheteHtml(b.id, b.ok ? ' ✓' : '') + '</div>';
+    var marcados = [];
+    (minha.bilhetes || []).forEach(function (b, i) {
+      var cor = CORES_BILHETE[i % CORES_BILHETE.length];
+      marcados.push({ id: b.id, cor: cor });
+      html += '<div class="bilhete' + (b.ok ? ' ok' : '') + '">' + bilheteHtml(b.id, b.ok ? ' ✓' : '', cor) + '</div>';
     });
+    html += '<canvas class="minimapa" id="mini"></canvas><p class="dica">Só você vê esse mapa: tracejado = seus bilhetes, linhas grossas = trens de cada jogador.</p>';
+    html += opcoesHtml(idx, false);
     tela.innerHTML = html;
+    desenharMiniMapa(document.getElementById('mini'), marcados);
+    ligarOpcoes(false);
 
     tela.querySelectorAll('[data-aberta]').forEach(function (b) {
       b.onclick = function () { travar(); enviar({ tipo: 'comprarAberta', idx: Number(b.getAttribute('data-aberta')) }); };
@@ -251,6 +389,8 @@
     (publico.jogadores[idx].bilhetesFim || []).forEach(function (b) {
       html += '<div class="bilhete' + (b.ok ? ' ok' : '') + '">' + bilheteHtml(b.id, b.ok ? ' ✓' : ' ✗') + '</div>';
     });
+    html += opcoesHtml(idx, true);
     tela.innerHTML = html;
+    ligarOpcoes(true);
   }
 })();

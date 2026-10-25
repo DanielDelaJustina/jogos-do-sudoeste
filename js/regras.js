@@ -35,13 +35,55 @@
     if (s.log.length > 6) s.log.shift();
   }
 
+  function limparNome(nome, padrao) {
+    return String(nome || '').trim().slice(0, 14) || padrao;
+  }
+
   function entrar(s, key, nome) {
-    if (s.fase !== 'sala') return 'A partida já começou.';
-    if (s.jogadores.some(function (j) { return j.key === key; })) return null;
+    var ja = s.jogadores.filter(function (j) { return j.key === key; })[0];
+    if (ja) return renomear(s, ja, nome); // entrar de novo = trocar o nome
+    if (s.fase !== 'sala') return 'A partida já começou. Peça para quem criou a sala voltar para a sala.';
     if (s.jogadores.length >= 5) return 'A sala está cheia (5 jogadores).';
     var i = s.jogadores.length;
-    s.jogadores.push({ key: key, nome: String(nome || 'Jogador ' + (i + 1)).slice(0, 14), cor: CORES_JOGADOR[i], nomeCor: NOMES_COR_JOGADOR[i] });
+    s.jogadores.push({ key: key, nome: limparNome(nome, 'Jogador ' + (i + 1)) });
+    recolorir(s);
     addLog(s, s.jogadores[i].nome + ' entrou.');
+    return null;
+  }
+
+  function renomear(s, j, nome) {
+    var novo = limparNome(nome, j.nome);
+    if (novo === j.nome) return null;
+    addLog(s, j.nome + ' agora é ' + novo + '.');
+    j.nome = novo;
+    return null;
+  }
+
+  // cada um fica com a cor da sua posição na sala (muda quando alguém sai)
+  function recolorir(s) {
+    s.jogadores.forEach(function (j, i) {
+      j.cor = CORES_JOGADOR[i];
+      j.nomeCor = NOMES_COR_JOGADOR[i];
+    });
+  }
+
+  function sair(s, idx) {
+    if (s.fase !== 'sala') return 'Só dá para sair antes de começar.';
+    var j = s.jogadores.splice(idx, 1)[0];
+    recolorir(s);
+    addLog(s, j.nome + ' saiu da sala.');
+    return null;
+  }
+
+  // encerra a partida e volta todo mundo para a sala (dá para entrar gente nova e começar de novo)
+  function voltarSala(s) {
+    ['baralho', 'descarte', 'bilhetes', 'donas', 'abertas', 'vez', 'compradas', 'ultimaVolta', 'ultimaRota', 'resultado', 'vencedores'].forEach(function (k) {
+      delete s[k];
+    });
+    s.jogadores = s.jogadores.map(function (j) { return { key: j.key, nome: j.nome }; });
+    recolorir(s);
+    s.fase = 'sala';
+    addLog(s, 'Partida encerrada. Esperando para começar de novo.');
     return null;
   }
 
@@ -289,6 +331,9 @@
     if (idx === -1) return 'Jogador não encontrado.';
     var j = s.jogadores[idx];
     if (acao.tipo === 'comecar') return idx === 0 ? comecar(s, mapa) : 'Só o primeiro jogador começa.';
+    if (acao.tipo === 'renomear') return renomear(s, j, acao.nome);
+    if (acao.tipo === 'sair') return sair(s, idx);
+    if (acao.tipo === 'voltarSala') return idx === 0 ? voltarSala(s) : 'Só o primeiro jogador pode encerrar a partida.';
     if (acao.tipo === 'escolherBilhetes') {
       if (s.fase === 'jogo' && idx !== s.vez) return 'Não é sua vez.';
       return escolherBilhetes(s, j, acao.ficar, mapa);

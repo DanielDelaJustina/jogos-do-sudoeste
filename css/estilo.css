@@ -35,6 +35,13 @@ body.tv { overflow: hidden; }
   background: #1f2937; color: #fde68a; border: 2px solid #b45309; border-radius: 1vh; padding: 1vh 2vh; cursor: pointer;
 }
 .btn-tv:focus, .btn-tv:hover { background: #b45309; color: #fff; outline: none; }
+/* aviso pequeno que não cobre o mapa */
+.faixa {
+  position: fixed; top: 1.5vh; left: 2vw; right: 22vw; z-index: 4; text-align: center;
+  background: rgba(23, 33, 49, 0.92); border: 2px solid #b45309; border-radius: 1.2vh;
+  padding: 1vh 2vh; font-size: 2.4vh; color: #fde68a;
+}
+.faixa b { color: #fff; }
 .tabela { border-collapse: collapse; margin: 2vh auto 0; font-size: 2.6vh; }
 .tabela th, .tabela td { padding: 1vh 2vh; border-bottom: 1px solid #334155; }
 .tabela th { color: #94a3b8; font-weight: 600; }
@@ -83,3 +90,6 @@ button.carta:disabled { opacity: .35; }
 .bilhete input { width: 24px; height: 24px; margin: 0; }
 .erro { position: fixed; left: 12px; right: 12px; bottom: 12px; background: #b91c1c; color: #fff; padding: 14px; border-radius: 12px; font-weight: 700; text-align: center; }
 .filtro { display: flex; gap: 6px; margin-bottom: 6px; }
+.minimapa { display: block; width: 100%; border-radius: 12px; border: 2px solid #78350f; margin: 8px 0; background: #6b9a45; }
+.bilhete .marca { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 2px solid #fff; }
+.faixa { cursor: pointer; }

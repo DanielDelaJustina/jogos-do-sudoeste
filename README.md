@@ -20,6 +20,8 @@ Quando alguém fica com 2 vagões ou menos, todos jogam mais uma vez e acaba. Na
 
 Rotas duplas só podem ser usadas as duas com 4 ou mais jogadores.
 
+**Durante o jogo:** qualquer um troca o próprio nome em **Opções** no celular. Antes de começar, dá para **Sair da sala**. O primeiro jogador pode **Encerrar a partida e voltar para a sala** (ou **Nova partida** no fim): todo mundo continua conectado e gente nova pode entrar. No celular, um **mapinha só seu** mostra onde ficam as cidades dos seus bilhetes.
+
 ## Como funciona por dentro
 
 - Site estático (GitHub Pages): `index.html`, `tv.html` (tabuleiro) e `celular.html` (mão do jogador).

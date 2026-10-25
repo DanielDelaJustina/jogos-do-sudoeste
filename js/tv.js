@@ -98,7 +98,14 @@
       }
       up['maos/' + j.key] = mao;
     });
-    for (var k in erros) up['maos/' + k + '/erro'] = erros[k];
+    if (estado.fase === 'sala') {
+      // na sala ninguém tem mão: apaga as da partida anterior (guardando só avisos de erro)
+      var vazias = {};
+      for (var e in erros) vazias[e] = { erro: erros[e] };
+      up.maos = Object.keys(vazias).length ? vazias : null;
+    } else {
+      for (var k in erros) up['maos/' + k + '/erro'] = erros[k];
+    }
     if (publico.ultimaRota && (!destaque || destaque.n !== publico.ultimaRota.n)) {
       destaque = { id: publico.ultimaRota.id, n: publico.ultimaRota.n, t: performance.now() };
       apito();
@@ -108,6 +115,19 @@
   }
 
   // ---------- telas por cima do mapa ----------
+
+  // no fim, o placar some com um clique (para ver o mapa final) e volta pela faixa
+  var placarEscondido = false;
+  document.getElementById('telaAviso').addEventListener('click', function () {
+    if (!publico || publico.fase !== 'fim') return;
+    placarEscondido = true;
+    atualizarTelas();
+  });
+  document.getElementById('faixa').addEventListener('click', function () {
+    if (!publico || publico.fase !== 'fim') return;
+    placarEscondido = false;
+    atualizarTelas();
+  });
 
   var qrFeito = false;
   function montarSala() {
@@ -134,13 +154,22 @@
         : 'Esperando jogadores (2 a 5)...';
     }
     var aviso = document.getElementById('telaAviso');
+    var faixa = document.getElementById('faixa');
+    // escolha de bilhetes: só uma faixa no topo, para dar para olhar o mapa enquanto decide
+    faixa.classList.toggle('hidden', f !== 'bilhetes');
     if (f === 'bilhetes') {
-      aviso.classList.remove('hidden');
-      var falta = publico.jogadores.filter(function (j) { return j.escolhendo; }).map(function (j) { return j.nome; });
-      document.getElementById('avisoTitulo').textContent = 'Escolham os bilhetes de destino';
-      document.getElementById('avisoTexto').textContent = 'No celular, fiquem com pelo menos 2. Faltam: ' + falta.join(', ');
+      var falta = publico.jogadores.filter(function (j) { return j.escolhendo; }).map(function (j) { return esc(j.nome); });
+      faixa.innerHTML = '<b>Escolham os bilhetes no celular</b> (fiquem com pelo menos 2) · o celular mostra no mapinha onde ficam as cidades · faltam: ' + falta.join(', ');
+    }
+    if (f !== 'fim') placarEscondido = false;
+    if (f === 'bilhetes') {
+      aviso.classList.add('hidden');
     } else if (f === 'fim') {
-      aviso.classList.remove('hidden');
+      aviso.classList.toggle('hidden', placarEscondido);
+      if (placarEscondido) {
+        faixa.classList.remove('hidden');
+        faixa.innerHTML = '<b>Fim de jogo.</b> Clique aqui para ver o placar de novo.';
+      }
       var vencedores = publico.vencedores.map(function (i) { return publico.jogadores[i].nome; });
       document.getElementById('avisoTitulo').textContent = (vencedores.length > 1 ? 'Empate: ' : 'Vencedor: ') + vencedores.join(' e ') + '!';
       var t = '<table class="tabela"><tr><th></th><th>Rotas</th><th>Bilhetes</th><th>Não feitos</th><th>Maior caminho</th><th>Total</th></tr>';
@@ -149,7 +178,7 @@
         t += '<tr><td><span class="bola" style="background:' + j.cor + '"></span>' + esc(j.nome) + '</td><td>' + r.rotas + '</td><td>+' + r.bilhetes +
           '</td><td>−' + r.perdidos + '</td><td>' + r.caminho + (r.bonus ? ' (+' + r.bonus + ')' : '') + '</td><td class="total">' + r.total + '</td></tr>';
       });
-      document.getElementById('avisoTexto').innerHTML = t + '</table><p class="dica">Nova partida: abra tv.html?nova=1</p>';
+      document.getElementById('avisoTexto').innerHTML = t + '</table><p class="dica">Clique para ver o mapa final. Nova partida: o primeiro jogador toca em "Nova partida" no celular.</p>';
     } else {
       aviso.classList.add('hidden');
     }
