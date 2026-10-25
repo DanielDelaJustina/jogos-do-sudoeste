@@ -324,6 +324,19 @@
       (minhaVez ? (compradas ? 'Pegue mais 1 carta' : 'Sua vez! Escolha UMA ação') : 'Vez de ' + esc(vezJ.nome)) + '</div>';
     if (publico.ultimaVolta !== null && publico.ultimaVolta !== undefined) html += '<p style="color:#fca5a5"><b>Última volta!</b></p>';
 
+    // minha mão primeiro: assim dá para comparar com as cartas da mesa antes de comprar
+    html += '<h3>Minha mão · ' + euJ.vagoes + ' vagões</h3><div class="mao">';
+    var temCarta = false;
+    ORDEM.forEach(function (c) {
+      var n = (minha.mao || {})[c];
+      if (n) {
+        html += cartaHtml(c, n);
+        temCarta = true;
+      }
+    });
+    if (!temCarta) html += '<p class="dica">Sem cartas.</p>';
+    html += '</div>';
+
     html += '<h3>1. Pegar cartas</h3><div class="mao">';
     (publico.abertas || []).forEach(function (c, i) {
       var pode = minhaVez && !(c === 'loco' && compradas > 0);
@@ -343,17 +356,7 @@
 
     html += '<h3>3. Novos bilhetes</h3><button class="botao sec" id="pedirBilhetes"' + (minhaVez && !compradas ? '' : ' disabled') + '>Pegar 3 bilhetes (fico com 1 ou mais)</button>';
 
-    html += '<h3>Minha mão · ' + euJ.vagoes + ' vagões</h3><div class="mao">';
-    var temCarta = false;
-    ORDEM.forEach(function (c) {
-      var n = (minha.mao || {})[c];
-      if (n) {
-        html += cartaHtml(c, n);
-        temCarta = true;
-      }
-    });
-    if (!temCarta) html += '<p class="dica">Sem cartas.</p>';
-    html += '</div><h3>Meus bilhetes</h3>';
+    html += '<h3>Meus bilhetes</h3>';
     var marcados = [];
     (minha.bilhetes || []).forEach(function (b, i) {
       var cor = CORES_BILHETE[i % CORES_BILHETE.length];
