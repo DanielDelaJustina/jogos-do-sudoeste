@@ -3,23 +3,70 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Trilhos do Sudoeste</title>
+  <title>Jogos do Sudoeste</title>
   <link rel="stylesheet" href="css/estilo.css">
   <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-    .inicio { max-width: 520px; text-align: center; }
-    .inicio h1 { font-size: 40px; color: #fbbf24; margin: 0 0 6px; }
-    .inicio p { color: #cbd5e1; font-size: 17px; line-height: 1.5; }
-    .inicio a { text-decoration: none; }
+    body { min-height: 100vh; padding: 3vh 3vw; background: radial-gradient(circle at 50% 30%, #23324a, #0b111b 75%); }
+    .topo { text-align: center; margin-bottom: 3vh; }
+    .topo h1 { font-size: clamp(32px, 6vh, 64px); color: #fbbf24; margin: 0; letter-spacing: .02em; }
+    .topo p { color: #cbd5e1; font-size: clamp(15px, 2.4vh, 22px); margin: 1vh 0 0; }
+    .jogos { display: flex; flex-wrap: wrap; gap: 3vh; justify-content: center; max-width: 1500px; margin: 0 auto; }
+    .jogo {
+      flex: 1 1 300px; max-width: 440px; display: flex; flex-direction: column; text-decoration: none; color: #e2e8f0;
+      background: #172131; border: 3px solid var(--c); border-radius: 20px; overflow: hidden; transition: transform .15s;
+    }
+    .jogo:hover, .jogo:focus { transform: translateY(-6px) scale(1.02); outline: 4px solid #fde047; }
+    .jogo .capa { height: clamp(110px, 20vh, 200px); display: flex; align-items: center; justify-content: center; font-size: clamp(56px, 11vh, 110px); background: var(--c); }
+    .jogo .corpo { padding: 2vh 22px 2.5vh; flex: 1; display: flex; flex-direction: column; }
+    .jogo h2 { margin: 0 0 1vh; color: #fff; font-size: clamp(22px, 3.6vh, 34px); }
+    .jogo p { margin: 0 0 1.5vh; color: #cbd5e1; font-size: clamp(14px, 2.1vh, 19px); line-height: 1.45; flex: 1; }
+    .jogo .info { font-size: clamp(13px, 1.9vh, 17px); color: #fde68a; font-weight: 700; }
+    .jogo .abrir { margin-top: 1.5vh; background: var(--c); color: #fff; text-align: center; border-radius: 12px; padding: 1.4vh; font-weight: 800; font-size: clamp(16px, 2.4vh, 22px); }
+    .celular { text-align: center; margin-top: 4vh; }
+    .celular a { text-decoration: none; }
+    .celular .botao { display: inline-block; width: auto; padding: 14px 28px; }
+    .rodape { text-align: center; color: #64748b; font-size: 14px; margin-top: 3vh; }
   </style>
 </head>
 <body>
-  <div class="inicio">
-    <h1>🚂 Trilhos do Sudoeste</h1>
-    <p>Jogo de trens com as cidades do Sudoeste do Paraná. O tabuleiro fica na TV (ou no computador) e cada um joga pelo próprio celular, com suas cartas e bilhetes em segredo.</p>
-    <a href="tv.html?nova=1"><button class="botao">📺 Abrir o tabuleiro (na TV)</button></a>
-    <a href="celular.html"><button class="botao sec">📱 Entrar pelo celular</button></a>
-    <p style="font-size:14px;color:#64748b">De 2 a 5 jogadores. Inspirado em jogos de rotas de trem; mapa, regras simplificadas e arte próprios.</p>
+  <div class="topo">
+    <h1>Jogos do Sudoeste</h1>
+    <p>Jogos de tabuleiro com a cara do Sudoeste do Paraná. A mesa fica na TV e cada um joga pelo celular.</p>
   </div>
+
+  <div class="jogos">
+    <a class="jogo" href="tv.html?nova=1" style="--c:#b45309">
+      <div class="capa">🚂</div>
+      <div class="corpo">
+        <h2>Trilhos do Sudoeste</h2>
+        <p>Ligue as cidades da região com trilhos de trem: Beltrão, Pato Branco, Dois Vizinhos, Itapejara... Cumpra seus bilhetes secretos.</p>
+        <div class="info">2 a 5 jogadores · ~45 min</div>
+        <div class="abrir">Abrir na TV</div>
+      </div>
+    </a>
+    <a class="jogo" href="safra/tv.html?nova=1" style="--c:#15803d">
+      <div class="capa">🌽</div>
+      <div class="corpo">
+        <h2>Safra do Sudoeste</h2>
+        <p>Junte leite, milho, soja, suíno e erva-mate, abra negócios que dão desconto e receba as feiras das cidades. Primeiro a 15 pontos fecha a rodada.</p>
+        <div class="info">2 a 4 jogadores · ~30 min</div>
+        <div class="abrir">Abrir na TV</div>
+      </div>
+    </a>
+    <a class="jogo" href="expedicao/tv.html?nova=1" style="--c:#0e7490">
+      <div class="capa">🧭</div>
+      <div class="corpo">
+        <h2>Expedição Sudoeste</h2>
+        <p>Todos recebem a mesma peça ao mesmo tempo: monte sua trilha e leve os tropeiros aos destinos antes dos outros, pegando pinhão e erva-mate pelo caminho.</p>
+        <div class="info">1 a 5 jogadores · ~20 min · todos jogam juntos</div>
+        <div class="abrir">Abrir na TV</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="celular">
+    <a href="entrar.html"><span class="botao sec">📱 Está no celular? Entrar com o código da TV</span></a>
+  </div>
+  <p class="rodape">Adaptações livres de jogos de tabuleiro, com regras simplificadas e arte próprias.</p>
 </body>
 </html>

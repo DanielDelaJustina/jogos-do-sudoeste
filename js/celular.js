@@ -32,12 +32,7 @@
   // ---------- entrar ----------
 
   if (!/^[A-Z0-9]{5}$/.test(sala)) {
-    tela.innerHTML = '<h3>Entrar numa sala</h3><p>Digite o código que aparece na TV:</p>' +
-      '<input id="cod" maxlength="5" placeholder="EX: K7P2Q"><button class="botao" id="ir">Entrar</button>';
-    document.getElementById('ir').onclick = function () {
-      location.href = 'celular.html?sala=' + document.getElementById('cod').value.trim().toUpperCase();
-    };
-    document.getElementById('status').textContent = '';
+    location.href = 'entrar.html';
     return;
   }
 

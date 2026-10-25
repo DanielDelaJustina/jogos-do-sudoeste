@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1720">
+  <title>Safra do Sudoeste · Minha mão</title>
+  <link rel="stylesheet" href="../css/estilo.css">
+  <style>
+    .fichas { display: flex; flex-wrap: wrap; gap: 10px; }
+    .ficha {
+      width: 48px; height: 48px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 22px; border: 3px solid rgba(255,255,255,.6); position: relative; color: #111; font-weight: 800;
+    }
+    .cel-f { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .cel-f i { font-style: normal; font-weight: 800; color: #86efac; font-size: 13px; }
+    .ficha b { position: absolute; right: -6px; bottom: -6px; background: #0f172a; color: #fff; border-radius: 50%; width: 24px; height: 24px; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+    button.ficha { cursor: pointer; font-family: inherit; }
+    button.ficha[data-sel] { outline: 4px solid #f59e0b; outline-offset: 2px; }
+    button.ficha:disabled { opacity: .3; }
+    .negocio { background: #1e293b; border-radius: 12px; padding: 10px; margin: 8px 0; border-left: 8px solid var(--b, #64748b); }
+    .negocio .topo { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+    .negocio .pts { margin-left: auto; font-size: 22px; color: #fde047; }
+    .negocio .custo { display: flex; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+    .negocio .custo span { background: #0f172a; border-radius: 8px; padding: 4px 8px; font-size: 14px; }
+    .negocio .acoes { display: flex; gap: 8px; }
+    .negocio .acoes button { flex: 1; padding: 10px; border: 0; border-radius: 10px; font: inherit; font-weight: 700; color: #fff; background: #15803d; }
+    .negocio .acoes button.res { background: #475569; }
+    .negocio .acoes button:disabled { opacity: .35; }
+    .negocio .status { font-size: 13px; color: #94a3b8; }
+    .negocio .status.ok { color: #86efac; }
+  </style>
+</head>
+<body class="cel">
+  <header><b id="titulo">Safra do Sudoeste</b><span id="status">conectando...</span></header>
+  <main id="tela"></main>
+  <div id="erro" class="erro hidden"></div>
+
+  <script src="../js/firebase.js"></script>
+  <script src="../js/sala-regras.js"></script>
+  <script src="../js/sala.js"></script>
+  <script src="regras.js"></script>
+  <script src="celular.js"></script>
+</body>
+</html>

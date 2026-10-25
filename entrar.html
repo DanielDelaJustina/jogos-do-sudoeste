@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1720">
+  <title>Jogos do Sudoeste · Entrar</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <style>
+    #cod { width: 100%; font-size: 34px; text-align: center; letter-spacing: .2em; text-transform: uppercase; padding: 12px; border-radius: 12px; border: 2px solid #475569; background: #0f172a; color: #fff; }
+  </style>
+</head>
+<body class="cel">
+  <header><b>Jogos do Sudoeste</b><span id="status"></span></header>
+  <main id="tela">
+    <h3>Entrar numa sala</h3>
+    <p>Digite o código que aparece na TV:</p>
+    <input id="cod" maxlength="5" placeholder="K7P2Q" autocomplete="off" autocapitalize="characters">
+    <button class="botao" id="ir">Entrar</button>
+    <p class="dica">Ou aponte a câmera para o QR code da TV.</p>
+    <p class="dica"><a href="./" style="color:#94a3b8">← Ver os jogos</a></p>
+  </main>
+  <div id="erro" class="erro hidden"></div>
+
+  <script src="js/firebase.js"></script>
+  <script>
+    // descobre qual jogo está aberto na sala e manda para o celular certo
+    (function () {
+      var PAGINAS = { trilhos: 'celular.html', safra: 'safra/celular.html', expedicao: 'expedicao/celular.html' };
+      var cod = document.getElementById('cod');
+      var ir = document.getElementById('ir');
+      function erro(msg) {
+        var el = document.getElementById('erro');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        setTimeout(function () { el.classList.add('hidden'); }, 3500);
+      }
+      function entrar() {
+        var sala = cod.value.trim().toUpperCase();
+        if (!/^[A-Z0-9]{5}$/.test(sala)) return erro('O código tem 5 letras/números.');
+        ir.disabled = true;
+        FB.get('salas/' + sala + '/publico/jogo').then(function (jogo) {
+          ir.disabled = false;
+          if (!jogo || !PAGINAS[jogo]) return erro('Sala ' + sala + ' não encontrada. Confira o código na TV.');
+          location.href = PAGINAS[jogo] + '?sala=' + sala;
+        }).catch(function () {
+          ir.disabled = false;
+          erro('Sem conexão. Tente de novo.');
+        });
+      }
+      ir.onclick = entrar;
+      cod.onkeydown = function (e) { if (e.key === 'Enter') entrar(); };
+      var pedida = new URLSearchParams(location.search).get('sala');
+      if (pedida) {
+        cod.value = pedida;
+        entrar();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -353,6 +353,7 @@
     var fim = s.fase === 'fim';
     return {
       sala: s.sala,
+      jogo: 'trilhos',
       fase: s.fase,
       vez: s.vez === undefined ? null : s.vez,
       compradas: s.compradas || 0,
