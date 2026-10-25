@@ -80,12 +80,16 @@ button.carta:disabled { opacity: .35; }
   display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; background: #1e293b; margin: 6px 0; font-size: 15px;
 }
 .rota .faixa { width: 14px; height: 40px; border-radius: 4px; flex: none; }
+.rota { flex-wrap: wrap; }
 .rota .txt { flex: 1; }
+.rota .pagar { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; padding-left: 22px; }
+.rota .pagar:empty { display: none; }
 .rota .txt b { display: block; font-size: 16px; }
-.rota button { padding: 8px 10px; border: 0; border-radius: 8px; font-weight: 700; color: #fff; font-size: 13px; cursor: pointer; text-shadow: 0 1px 2px #000; }
+.rota button { padding: 8px 10px; border: 1px solid rgba(255,255,255,.45); border-radius: 8px; font-weight: 700; color: #fff; font-size: 13px; cursor: pointer; text-shadow: 0 1px 2px #000; }
 .bilhete { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: #fef3c7; color: #422006; margin: 6px 0; font-weight: 700; }
 .bilhete .pts { margin-left: auto; font-size: 20px; }
 .bilhete.ok { background: #bbf7d0; color: #14532d; }
+.bilhete.fora { opacity: .45; }
 .bilhete label { display: flex; align-items: center; gap: 10px; width: 100%; }
 .bilhete input { width: 24px; height: 24px; margin: 0; }
 .erro { position: fixed; left: 12px; right: 12px; bottom: 12px; background: #b91c1c; color: #fff; padding: 14px; border-radius: 12px; font-weight: 700; text-align: center; }

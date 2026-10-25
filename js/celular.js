@@ -15,6 +15,7 @@
   var minha = null;
   var ultimoErro = 0;
   var escolha = {};
+  var filtroRota = ''; // busca de cidade na lista de rotas (sobrevive às atualizações da tela)
 
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
@@ -277,17 +278,25 @@
       if (escolha[id] === undefined) escolha[id] = true;
       var cor = CORES_BILHETE[i % CORES_BILHETE.length];
       marcados.push({ id: id, cor: cor });
-      html += '<div class="bilhete"><label><input type="checkbox" data-b="' + id + '"' + (escolha[id] ? ' checked' : '') + '>' + bilheteHtml(id, '', cor) + '</label></div>';
+      html += '<div class="bilhete' + (escolha[id] ? '' : ' fora') + '"><label><input type="checkbox" data-b="' + id + '"' + (escolha[id] ? ' checked' : '') + '>' + bilheteHtml(id, '', cor) + '</label></div>';
     });
     if (minha.bilhetes && minha.bilhetes.length) {
       html += '<p class="dica">Você já tem: ' + minha.bilhetes.map(function (b) { var x = MAPA.bilhetes[b.id]; return cidade(x.a) + ' → ' + cidade(x.b); }).join(', ') + '</p>';
     }
     html += '<button class="botao" id="confirmar">Confirmar</button>' + opcoesHtml(eu(), false);
     tela.innerHTML = html;
-    desenharMiniMapa(document.getElementById('mini'), marcados);
+    // o mapinha mostra só os bilhetes marcados: desmarcou, o trajeto some
+    function redesenhar() {
+      desenharMiniMapa(document.getElementById('mini'), marcados.filter(function (m) { return escolha[m.id]; }));
+    }
+    redesenhar();
     ligarOpcoes(false);
     tela.querySelectorAll('[data-b]').forEach(function (cb) {
-      cb.onchange = function () { escolha[cb.getAttribute('data-b')] = cb.checked; };
+      cb.onchange = function () {
+        escolha[cb.getAttribute('data-b')] = cb.checked;
+        cb.closest('.bilhete').classList.toggle('fora', !cb.checked);
+        redesenhar();
+      };
     });
     document.getElementById('confirmar').onclick = function () {
       var ficar = minha.pendentes.filter(function (id) { return escolha[id]; });
@@ -324,18 +333,12 @@
     html += '<p class="dica">Pegue 2 cartas. Coringa aberto conta como 2.</p>';
 
     html += '<h3>2. Ocupar uma rota</h3>';
+    var temRotas = minhaVez && !compradas && minha.possiveis && minha.possiveis.length;
     if (!minhaVez || compradas) html += '<p class="dica">Na sua vez, aparecem aqui as rotas que dá para ocupar.</p>';
-    else if (!minha.possiveis || !minha.possiveis.length) html += '<p class="dica">Nenhuma rota possível agora: junte mais cartas da mesma cor.</p>';
+    else if (!temRotas) html += '<p class="dica">Nenhuma rota possível agora: junte mais cartas da mesma cor.</p>';
     else {
-      minha.possiveis.slice().sort(function (a, b) { return MAPA.rotas[b.rota].n - MAPA.rotas[a.rota].n; }).forEach(function (p) {
-        var r = MAPA.rotas[p.rota];
-        html += '<div class="rota"><span class="faixa" style="background:' + CORES_CARTA[r.cor] + '"></span><span class="txt"><b>' +
-          esc(cidade(r.a)) + ' — ' + esc(cidade(r.b)) + '</b>' + r.n + ' vagão(ões) · ' + (r.cor === 'cinza' ? 'qualquer cor' : r.cor) + '</span>';
-        p.opcoes.forEach(function (cor) {
-          html += '<button data-rota="' + p.rota + '" data-cor="' + cor + '" style="background:' + CORES_CARTA[cor] + '">Pagar ' + (NOME_CARTA[cor] || cor) + '</button>';
-        });
-        html += '</div>';
-      });
+      html += '<div class="filtro"><input class="nome" id="filtroRota" placeholder="Buscar cidade (ex.: pato)" value="' + esc(filtroRota) + '" autocomplete="off">' +
+        '<button class="botao sec" id="limparFiltro" style="width:auto;margin:0 0 10px;padding:0 16px">✕</button></div><div id="listaRotas"></div>';
     }
 
     html += '<h3>3. Novos bilhetes</h3><button class="botao sec" id="pedirBilhetes"' + (minhaVez && !compradas ? '' : ' disabled') + '>Pegar 3 bilhetes (fico com 1 ou mais)</button>';
@@ -359,20 +362,69 @@
     });
     html += '<canvas class="minimapa" id="mini"></canvas><p class="dica">Só você vê esse mapa: tracejado = seus bilhetes, linhas grossas = trens de cada jogador.</p>';
     html += opcoesHtml(idx, false);
+    // se a pessoa estava digitando na busca, continua digitando depois que a tela atualiza
+    var digitando = document.activeElement && document.activeElement.id === 'filtroRota';
     tela.innerHTML = html;
     desenharMiniMapa(document.getElementById('mini'), marcados);
     ligarOpcoes(false);
+    if (temRotas) {
+      var campo = document.getElementById('filtroRota');
+      campo.oninput = function () {
+        filtroRota = campo.value;
+        listarRotas();
+      };
+      document.getElementById('limparFiltro').onclick = function () {
+        filtroRota = '';
+        campo.value = '';
+        listarRotas();
+      };
+      listarRotas();
+      if (digitando) {
+        campo.focus();
+        campo.setSelectionRange(campo.value.length, campo.value.length);
+      }
+    }
 
     tela.querySelectorAll('[data-aberta]').forEach(function (b) {
       b.onclick = function () { travar(); enviar({ tipo: 'comprarAberta', idx: Number(b.getAttribute('data-aberta')) }); };
     });
     var monte = tela.querySelector('[data-monte]');
     if (monte) monte.onclick = function () { travar(); enviar({ tipo: 'comprarMonte' }); };
-    tela.querySelectorAll('[data-rota]').forEach(function (b) {
-      b.onclick = function () { travar(); enviar({ tipo: 'ocupar', rota: Number(b.getAttribute('data-rota')), cor: b.getAttribute('data-cor') }); };
-    });
     var pb = document.getElementById('pedirBilhetes');
     if (pb) pb.onclick = function () { travar(); enviar({ tipo: 'pedirBilhetes' }); };
+  }
+
+  // busca sem acento e sem diferença de maiúsculas: "pato" acha Pato Branco, "vere" acha Verê
+  function semAcento(t) {
+    return String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  function listarRotas() {
+    var alvo = document.getElementById('listaRotas');
+    if (!alvo) return;
+    var busca = semAcento(filtroRota);
+    var todas = minha.possiveis.slice().sort(function (a, b) { return MAPA.rotas[b.rota].n - MAPA.rotas[a.rota].n; });
+    var lista = todas.filter(function (p) {
+      var r = MAPA.rotas[p.rota];
+      return !busca || semAcento(cidade(r.a)).indexOf(busca) !== -1 || semAcento(cidade(r.b)).indexOf(busca) !== -1;
+    });
+    var html = busca ? '<p class="dica">' + lista.length + ' de ' + todas.length + ' rotas possíveis com "' + esc(filtroRota.trim()) + '"</p>' : '';
+    if (!lista.length) html += '<p class="dica">Nenhuma rota que você consegue fechar agora passa por essa cidade.</p>';
+    lista.forEach(function (p) {
+      var r = MAPA.rotas[p.rota];
+      html += '<div class="rota"><span class="faixa" style="background:' + CORES_CARTA[r.cor] + '"></span><span class="txt"><b>' +
+        esc(cidade(r.a)) + ' — ' + esc(cidade(r.b)) + '</b>' + r.n + ' vagão(ões) · ' + (r.cor === 'cinza' ? 'qualquer cor' : r.cor) + '</span><div class="pagar">';
+      p.opcoes.forEach(function (cor) {
+        var claro = cor === 'branco' || cor === 'amarelo';
+        html += '<button data-rota="' + p.rota + '" data-cor="' + cor + '" style="background:' + CORES_CARTA[cor] +
+          (claro ? ';color:#111;text-shadow:none' : '') + '">Pagar ' + (NOME_CARTA[cor] || cor) + '</button>';
+      });
+      html += '</div></div>';
+    });
+    alvo.innerHTML = html;
+    alvo.querySelectorAll('[data-rota]').forEach(function (b) {
+      b.onclick = function () { travar(); enviar({ tipo: 'ocupar', rota: Number(b.getAttribute('data-rota')), cor: b.getAttribute('data-cor') }); };
+    });
   }
 
   // evita toque duplo enquanto a TV responde
