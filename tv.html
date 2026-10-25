@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trilhos do Sudoeste · Tabuleiro</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="tv">
+  <canvas id="mapa"></canvas>
+  <button id="telaCheia" class="btn-tv">Tela cheia</button>
+
+  <div id="telaSala" class="overlay hidden">
+    <div class="caixa">
+      <h1>Trilhos do Sudoeste</h1>
+      <h2>Ligue as cidades do Sudoeste do Paraná com seus trens!</h2>
+      <div class="sala-linha">
+        <div class="qr" id="qr"></div>
+        <div>
+          <div class="dica">Código da sala</div>
+          <div class="codigo" id="codigo">-----</div>
+          <div class="dica">Escaneie o QR ou abra no celular:<br><b id="link"></b></div>
+          <div class="lista-jog" id="listaJog"></div>
+          <div class="dica" id="dicaComecar">Esperando jogadores (2 a 5)...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="telaAviso" class="overlay hidden"><div class="caixa"><h1 id="avisoTitulo"></h1><h2 id="avisoTexto"></h2></div></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/mapa.js"></script>
+  <script src="js/regras.js"></script>
+  <script src="js/tv.js"></script>
+</body>
+</html>
