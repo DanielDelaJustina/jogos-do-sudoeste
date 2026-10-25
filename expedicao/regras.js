@@ -1,4 +1,4 @@
-// Expedição Sudoeste: cada jogador monta a SUA trilha num tabuleiro 6x6, mas todos recebem a MESMA peça
+// Expedição Sudoeste: cada jogador monta a SUA trilha num tabuleiro de 6 colunas x 5 linhas, mas todos recebem a MESMA peça
 // ao mesmo tempo. Com a peça da rodada, cada um escolhe:
 //   - colocar no seu tabuleiro (em qualquer casa vazia, podendo girar), OU
 //   - descartar e andar com os tropeiros: tantos passos quantas saídas a peça tem (2, 3 ou 4).
@@ -7,11 +7,13 @@
 // Pinhão vale 2 e erva-mate vale 1 para quem passar pela casa. Termina quando alguém leva os 4
 // tropeiros aos destinos (a rodada se completa) ou quando as 36 peças acabam.
 (function (root) {
-  var N = 5;
+  var COL = 6; // colunas
+  var LIN = 5; // linhas
   var DIRS = { N: [-1, 0], S: [1, 0], L: [0, 1], O: [0, -1] };
   var OPOSTO = { N: 'S', S: 'N', L: 'O', O: 'L' };
-  var QTD = 3; // tropeiros por jogador
+  var QTD = 4; // tropeiros por jogador
   var VALORES = [6, 5, 4, 3, 2];
+  var DISTANCIA = 3; // distância mínima (em casas) entre a partida e o destino da mesma cor, como no original
   var NO_TEMPLO = 99;
   var NA_PARTIDA = -1;
   var TROPEIROS = [
@@ -22,21 +24,22 @@
   ];
 
   // 36 peças fixas; só a ordem é sorteada. Saídas: N, S, L (leste/direita), O (oeste/esquerda).
+  // Como no original, a maioria é reta ou curva (2 saídas): 24 de 2 saídas, 8 de 3 e 4 cruzamentos.
   var PECAS = [];
   function poe(saidas, vezes, itens) {
     for (var k = 0; k < vezes; k++) PECAS.push({ id: PECAS.length, saidas: saidas, item: (itens && itens[k]) || null });
   }
-  poe('NS', 3, ['pinhao', 'erva']);
-  poe('LO', 3, ['pinhao', 'erva']);
-  poe('NL', 3, ['erva']);
-  poe('SL', 3, ['pinhao']);
-  poe('SO', 3, ['erva']);
-  poe('NO', 3, ['pinhao']);
-  poe('NSL', 3, [null, 'erva']);
-  poe('SLO', 3, [null, 'pinhao']);
-  poe('NSO', 3, [null, 'erva']);
-  poe('NLO', 3, [null, 'pinhao']);
-  poe('NSLO', 6, [null, null, 'erva']);
+  poe('NS', 5, ['pinhao', 'erva']);
+  poe('LO', 5, ['erva']);
+  poe('NL', 4, ['pinhao', 'erva']);
+  poe('SL', 3, ['erva']);
+  poe('SO', 4, ['pinhao', 'erva']);
+  poe('NO', 3, ['erva']);
+  poe('NSL', 2, ['pinhao']);
+  poe('SLO', 2, ['erva']);
+  poe('NSO', 2, [null, 'erva']);
+  poe('NLO', 2, ['pinhao']);
+  poe('NSLO', 4, [null, 'erva']);
 
   function embaralhar(l) {
     for (var i = l.length - 1; i > 0; i--) {
@@ -52,18 +55,23 @@
   // pontos de borda: partidas embaixo (S) e à esquerda (O); destinos em cima (N) e à direita (L)
   // { lado, i } -> casa vizinha do tabuleiro
   function casaDaBorda(p) {
-    if (p.lado === 'S') return (N - 1) * N + p.i;
-    if (p.lado === 'O') return p.i * N;
+    if (p.lado === 'S') return (LIN - 1) * COL + p.i;
+    if (p.lado === 'O') return p.i * COL;
     if (p.lado === 'N') return p.i;
-    return p.i * N + (N - 1); // L
+    return p.i * COL + (COL - 1); // L
   }
   function sortearBordas() {
     for (var tent = 0; tent < 500; tent++) {
       var ini = [];
       var fim = [];
-      for (var x = 0; x < N; x++) {
-        ini.push('S' + x, 'O' + x);
-        fim.push('N' + x, 'L' + x);
+      // S e N têm uma posição por coluna; O e L, uma por linha
+      for (var x = 0; x < COL; x++) {
+        ini.push('S' + x);
+        fim.push('N' + x);
+      }
+      for (var y = 0; y < LIN; y++) {
+        ini.push('O' + y);
+        fim.push('L' + y);
       }
       embaralhar(ini);
       embaralhar(fim);
@@ -89,7 +97,7 @@
       for (k = 0; k < QTD; k++) {
         var a = casaDaBorda(inicios[k]);
         var b = casaDaBorda(templos[k]);
-        if (Math.abs(Math.floor(a / N) - Math.floor(b / N)) + Math.abs((a % N) - (b % N)) < N - 1) ok = false;
+        if (Math.abs(Math.floor(a / COL) - Math.floor(b / COL)) + Math.abs((a % COL) - (b % COL)) < DISTANCIA) ok = false;
       }
       if (ok) return { inicios: inicios, templos: templos };
     }
@@ -107,7 +115,7 @@
     s.vencedores = null;
     s.jogadores.forEach(function (j) {
       j.tab = [];
-      for (var c = 0; c < N * N; c++) j.tab.push(-1);
+      for (var c = 0; c < COL * LIN; c++) j.tab.push(-1);
       j.exp = s.inicios.map(function () { return NA_PARTIDA; });
       j.coletados = [];
       j.ganhos = [];
@@ -154,18 +162,18 @@
       if (tab[c0] >= 0 && saidas(tab[c0]).indexOf(ini.lado) !== -1 && livres(c0)) res.push(c0);
       return res;
     }
-    var r = Math.floor(pos / N);
-    var c = pos % N;
+    var r = Math.floor(pos / COL);
+    var c = pos % COL;
     saidas(tab[pos]).split('').forEach(function (d) {
       var r2 = r + DIRS[d][0];
       var c2 = c + DIRS[d][1];
-      if (r2 < 0 || r2 >= N || c2 < 0 || c2 >= N) {
+      if (r2 < 0 || r2 >= LIN || c2 < 0 || c2 >= COL) {
         var t = s.templos[e];
         var saiAqui = (d === 'N' && t.lado === 'N' && t.i === c) || (d === 'L' && t.lado === 'L' && t.i === r);
         if (saiAqui) res.push(NO_TEMPLO);
         return;
       }
-      var alvo = r2 * N + c2;
+      var alvo = r2 * COL + c2;
       if (tab[alvo] >= 0 && saidas(tab[alvo]).indexOf(OPOSTO[d]) !== -1 && livres(alvo)) res.push(alvo);
     });
     return res;
@@ -207,7 +215,7 @@
 
     if (a.tipo === 'colocar') {
       var c = Number(a.celula);
-      if (!(c >= 0 && c < N * N)) return 'Casa inválida.';
+      if (!(c >= 0 && c < COL * LIN)) return 'Casa inválida.';
       if (j.tab[c] >= 0) return 'Essa casa já tem peça.';
       var giro = Number(a.giro) || 0;
       if (!(giro >= 0 && giro < 4)) return 'Giro inválido.';
@@ -267,7 +275,7 @@
   function privada(s) { return { versao: s.versao }; }
 
   var API = {
-    N: N, QTD: QTD, DIRS: DIRS, PECAS: PECAS, TROPEIROS: TROPEIROS, NO_TEMPLO: NO_TEMPLO, NA_PARTIDA: NA_PARTIDA,
+    COL: COL, LIN: LIN, QTD: QTD, DIRS: DIRS, PECAS: PECAS, TROPEIROS: TROPEIROS, NO_TEMPLO: NO_TEMPLO, NA_PARTIDA: NA_PARTIDA,
     min: 1, max: 5, comecar: comecar, acao: acao, publica: publica, privada: privada, normalizar: normalizar,
     destinos: destinos, saidas: saidas, item: item, casaDaBorda: casaDaBorda, pontos: pontos, chegaram: chegaram,
   };

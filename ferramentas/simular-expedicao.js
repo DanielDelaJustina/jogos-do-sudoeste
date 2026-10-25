@@ -2,29 +2,30 @@
 // quando dá para aproximar os tropeiros dos destinos.
 const SR = require('../js/sala-regras.js');
 const R = require('../expedicao/regras.js');
-const N = R.N;
+const COL = R.COL;
+const LIN = R.LIN;
 
 function distDestino(s, e, pos) {
   if (pos === R.NO_TEMPLO) return -1;
   const t = R.casaDaBorda(s.templos[e]);
   const c = pos === R.NA_PARTIDA ? R.casaDaBorda(s.inicios[e]) : pos;
-  return Math.abs(Math.floor(c / N) - Math.floor(t / N)) + Math.abs((c % N) - (t % N)) + (pos === R.NA_PARTIDA ? 1 : 0);
+  return Math.abs(Math.floor(c / COL) - Math.floor(t / COL)) + Math.abs((c % COL) - (t % COL)) + (pos === R.NA_PARTIDA ? 1 : 0);
 }
 
 function encaixe(s, tab, cel, sai) {
-  const r = Math.floor(cel / N);
-  const c = cel % N;
+  const r = Math.floor(cel / COL);
+  const c = cel % COL;
   let p = 0;
   for (const d of 'NSLO') {
     const tem = sai.includes(d);
     const r2 = r + R.DIRS[d][0];
     const c2 = c + R.DIRS[d][1];
-    if (r2 < 0 || r2 >= N || c2 < 0 || c2 >= N) {
+    if (r2 < 0 || r2 >= LIN || c2 < 0 || c2 >= COL) {
       const borda = s.inicios.concat(s.templos).some((b) => b.lado === d && b.i === (d === 'N' || d === 'S' ? c : r));
       if (tem) p += borda ? 3 : -1;
       continue;
     }
-    const viz = tab[r2 * N + c2];
+    const viz = tab[r2 * COL + c2];
     if (viz < 0) continue;
     const casa = R.saidas(viz).includes({ N: 'S', S: 'N', L: 'O', O: 'L' }[d]);
     if (tem && casa) p += 2;
@@ -40,10 +41,10 @@ function rotas(s) {
     const fim = s.templos[e];
     const a = R.casaDaBorda(ini);
     const b = R.casaDaBorda(fim);
-    let r = Math.floor(a / N);
-    let c = a % N;
-    const rb = Math.floor(b / N);
-    const cb = b % N;
+    let r = Math.floor(a / COL);
+    let c = a % COL;
+    const rb = Math.floor(b / COL);
+    const cb = b % COL;
     const casas = [];
     let entra = ini.lado;
     // sobe primeiro se saiu de baixo, anda para a direita primeiro se saiu da esquerda
@@ -52,7 +53,7 @@ function rotas(s) {
     else { for (let k = c; k < cb; k++) passos.push('L'); for (let k = r; k > rb; k--) passos.push('N'); for (let k = r; k < rb; k++) passos.push('S'); }
     passos.push(fim.lado);
     for (const d of passos) {
-      casas.push({ cel: r * N + c, pede: entra + d });
+      casas.push({ cel: r * COL + c, pede: entra + d });
       r += R.DIRS[d][0];
       c += R.DIRS[d][1];
       entra = { N: 'S', S: 'N', L: 'O', O: 'L' }[d];

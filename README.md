@@ -28,10 +28,10 @@ Limite de 10 fichas na mão. As **feiras** das cidades visitam sozinhas quem tiv
 
 A TV sorteia uma peça de trilha por rodada, **a mesma para todos**, e todos jogam ao mesmo tempo. Com a peça, cada um escolhe:
 
-- **Colocar** no seu tabuleiro 5x5 (em qualquer casa vazia; dá para girar), OU
+- **Colocar** no seu tabuleiro de 6x5, igual ao original (em qualquer casa vazia; dá para girar), OU
 - **Descartar** e andar com os tropeiros: tantos passos quantas saídas a peça tem (2, 3 ou 4).
 
-Cada um dos 3 tropeiros sai da borda e precisa chegar à casinha da mesma cor. Quem chega primeiro em cada destino ganha mais (6, 5, 4...). Pinhão vale 2 e erva-mate 1 para quem passar pela casa. Acaba quando alguém leva os 3 tropeiros (a rodada se completa) ou quando as 36 peças acabam.
+Cada um dos 4 tropeiros sai da borda e precisa chegar à casinha da mesma cor. Quem chega primeiro em cada destino ganha mais (6, 5, 4...). Pinhão vale 2 e erva-mate 1 para quem passar pela casa. Acaba quando alguém leva os 4 tropeiros (a rodada se completa) ou quando as 36 peças acabam.
 
 ## 🚂 Trilhos do Sudoeste
 

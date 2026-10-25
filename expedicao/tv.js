@@ -74,14 +74,15 @@
     var areaW = W - areaX - 20;
     var celW = areaW / cols;
     var celH = (H - 40) / linhas;
-    var t = Math.min(celW - 20, celH - 70);
+    // t = largura do tabuleiro; a altura sai de D.altura (o tabuleiro é mais largo que alto)
+    var t = Math.min(celW - 20, (celH - 70) * celW / D.altura(celW));
     js.forEach(function (j, i) {
       var lin = Math.floor(i / cols);
       var col = i % cols;
       var naLinha = Math.min(cols, n - lin * cols);
       var sobra = (cols - naLinha) * celW / 2;
       var cx = areaX + sobra + col * celW + celW / 2;
-      var y = 20 + lin * celH + (celH - t - 60) / 2;
+      var y = 20 + lin * celH + (celH - D.altura(t) - 60) / 2;
       // cabeçalho: nome, pontos e se já jogou
       D.caixa(ctx, cx - t / 2, y, t, 50, 12);
       ctx.fillStyle = j.cor;

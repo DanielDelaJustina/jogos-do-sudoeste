@@ -1,7 +1,8 @@
 // Desenho da Expedição usado pela TV e pelo celular: peças, tabuleiro com bordas e tropeiros.
 (function () {
   var R = window.REGRAS_EXPEDICAO;
-  var N = R.N;
+  var COL = R.COL;
+  var LIN = R.LIN;
   var MEIO = { N: [0.5, 0], S: [0.5, 1], L: [1, 0.5], O: [0, 0.5] };
 
   function caixa(ctx, x, y, w, h, r) {
@@ -83,12 +84,12 @@
     ctx.restore();
   }
 
-  // posição (linha, coluna) na grade com borda: -1 e N são as bordas
+  // posição (linha, coluna) na grade com borda: -1, LIN e COL são as bordas
   function lugarBorda(b) {
-    if (b.lado === 'S') return [N, b.i];
+    if (b.lado === 'S') return [LIN, b.i];
     if (b.lado === 'O') return [b.i, -1];
     if (b.lado === 'N') return [-1, b.i];
-    return [b.i, N];
+    return [b.i, COL];
   }
 
   function tropeiro(ctx, x, y, r, e, marcado) {
@@ -151,24 +152,27 @@
     ctx.setLineDash([]);
   }
 
-  // tabuleiro completo de um jogador. o = { x, y, t (tamanho total), jog, pub, exp (opcional, posições locais),
+  // altura do tabuleiro (com a borda) para uma largura t
+  function altura(t) { return t * (LIN + 2) / (COL + 2); }
+
+  // tabuleiro completo de um jogador. o = { x, y, t (largura total; altura = altura(t)), jog, pub, exp (opcional, posições locais),
   //   destaque: [casas ou 99], sel: tropeiro selecionado, fantasma: { cel, v }, marcarVazias }
   function tabuleiro(ctx, o) {
-    var cel = o.t / (N + 2);
+    var cel = o.t / (COL + 2);
     var x0 = o.x + cel;
     var y0 = o.y + cel;
     var jog = o.jog;
     var exp = o.exp || jog.exp;
     var col = jog.coletados || [];
     var pub = o.pub;
-    caixa(ctx, o.x, o.y, o.t, o.t, cel * 0.3);
+    caixa(ctx, o.x, o.y, o.t, altura(o.t), cel * 0.3);
     ctx.fillStyle = '#1c2a12';
     ctx.fill();
     ctx.fillStyle = '#365314';
-    ctx.fillRect(x0, y0, cel * N, cel * N);
-    for (var c = 0; c < N * N; c++) {
-      var px = x0 + (c % N) * cel;
-      var py = y0 + Math.floor(c / N) * cel;
+    ctx.fillRect(x0, y0, cel * COL, cel * LIN);
+    for (var c = 0; c < COL * LIN; c++) {
+      var px = x0 + (c % COL) * cel;
+      var py = y0 + Math.floor(c / COL) * cel;
       if (jog.tab[c] >= 0) peca(ctx, px, py, cel, jog.tab[c], col.indexOf(c) !== -1);
       else {
         ctx.strokeStyle = 'rgba(255,255,255,0.12)';
@@ -194,8 +198,8 @@
         lx = x0 + lt2[1] * cel;
         ly = y0 + lt2[0] * cel;
       } else {
-        lx = x0 + (d % N) * cel;
-        ly = y0 + Math.floor(d / N) * cel;
+        lx = x0 + (d % COL) * cel;
+        ly = y0 + Math.floor(d / COL) * cel;
       }
       ctx.strokeStyle = '#fde047';
       ctx.lineWidth = Math.max(3, cel * 0.1);
@@ -215,8 +219,8 @@
         tx = x0 + (l2[1] + 0.8) * cel;
         ty = y0 + (l2[0] + 0.25) * cel;
       } else {
-        tx = x0 + (p % N + 0.62) * cel;
-        ty = y0 + (Math.floor(p / N) + 0.62) * cel;
+        tx = x0 + (p % COL + 0.62) * cel;
+        ty = y0 + (Math.floor(p / COL) + 0.62) * cel;
       }
       tropeiro(ctx, tx, ty, cel * (p === R.NO_TEMPLO ? 0.17 : 0.22), e2, o.sel === e2);
     }
@@ -224,10 +228,10 @@
 
   // de um toque (coordenadas dentro do tabuleiro) para { tipo: 'casa', cel } ou { tipo: 'partida'|'destino', e }
   function tocar(o, px, py) {
-    var cel = o.t / (N + 2);
+    var cel = o.t / (COL + 2);
     var gc = Math.floor((px - o.x) / cel) - 1;
     var gr = Math.floor((py - o.y) / cel) - 1;
-    if (gr >= 0 && gr < N && gc >= 0 && gc < N) return { tipo: 'casa', cel: gr * N + gc };
+    if (gr >= 0 && gr < LIN && gc >= 0 && gc < COL) return { tipo: 'casa', cel: gr * COL + gc };
     for (var e = 0; e < o.pub.inicios.length; e++) {
       var li = lugarBorda(o.pub.inicios[e]);
       if (li[0] === gr && li[1] === gc) return { tipo: 'partida', e: e };
@@ -237,5 +241,5 @@
     return null;
   }
 
-  window.DESENHO_EXP = { peca: peca, tabuleiro: tabuleiro, tocar: tocar, tropeiro: tropeiro, destino: destino, pinhao: pinhao, erva: erva, caixa: caixa };
+  window.DESENHO_EXP = { peca: peca, tabuleiro: tabuleiro, altura: altura, tocar: tocar, tropeiro: tropeiro, destino: destino, pinhao: pinhao, erva: erva, caixa: caixa };
 })();

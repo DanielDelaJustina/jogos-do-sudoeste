@@ -9,11 +9,12 @@
     local = { rodada: rodada, modo: 'colocar', giro: 0, fantasma: null, passos: [], exp: jog.exp.slice(), sel: null };
   }
 
-  function pintar(canvas, tamCss, fn) {
+  function pintar(canvas, tamCss, fn, altCss) {
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    altCss = altCss || tamCss;
     canvas.width = tamCss * dpr;
-    canvas.height = tamCss * dpr;
-    canvas.style.height = tamCss + 'px';
+    canvas.height = altCss * dpr;
+    canvas.style.height = altCss + 'px';
     var ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     fn(ctx);
@@ -81,7 +82,7 @@
           o.destaque = R.destinos(pub, eu.tab, local.exp, local.sel);
         }
       }
-      pintar(cTab, tam, function (ctx) { D.tabuleiro(ctx, o); });
+      pintar(cTab, tam, function (ctx) { D.tabuleiro(ctx, o); }, D.altura(tam));
 
       if (fim || eu.feito) return;
 
