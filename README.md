@@ -12,7 +12,19 @@ Jogos de tabuleiro com a cara do **Sudoeste do Paraná**. A mesa fica na TV (ou 
 
 Em todos: a TV mostra um QR code e o código da sala. Cada um entra pelo celular (QR ou **Entrar com o código** no menu), coloca o nome, e o primeiro a entrar aperta **COMEÇAR**. O primeiro jogador também pode encerrar a partida ou começar outra.
 
-Adaptações livres de jogos de tabuleiro, com regras simplificadas e arte próprias.
+## 💡 De onde veio a ideia
+
+Eu e minha esposa gostamos muito de jogos de tabuleiro. Este projeto nasceu num fim de semana: quis levar a experiência desses jogos para a TV de casa, de um jeito mais dinâmico e online (sem montar tabuleiro, sem contar pontos, dá para jogar com amigos à distância), com o tema da nossa região. Também foi uma forma de aprender a usar o [Claude Code](https://claude.com/claude-code) e ver até onde ele chega.
+
+Cada jogo foi feito pensando em um clássico moderno, que recomendo muito conhecer e comprar:
+
+| Nosso jogo | Feito pensando em | Autor · editora |
+| --- | --- | --- |
+| 🚂 Trilhos do Sudoeste | *Ticket to Ride* | Alan R. Moon · Days of Wonder |
+| 🌽 Safra do Sudoeste | *Splendor* | Marc André · Space Cowboys |
+| 🧭 Expedição Sudoeste | *Karuba* | Rüdiger Dorn · HABA |
+
+São adaptações livres e simplificadas: nomes, tema, arte, textos e código são próprios. Projeto pessoal, gratuito e sem fins comerciais, sem relação com os autores ou as editoras desses jogos. Os nomes citados são marcas de seus donos e aparecem aqui só como crédito à inspiração.
 
 ## 🌽 Safra do Sudoeste
 
