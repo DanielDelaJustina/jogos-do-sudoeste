@@ -63,7 +63,7 @@
       }
 
       html += '<canvas id="tab"></canvas>';
-      html += '<div class="placar"><span>' + eu.pontos + ' pontos</span><span>' + eu.chegaram + ' de ' + pub.templos.length + ' tropeiros chegaram</span></div>';
+      html += '<div class="placar"><span>' + eu.pontos + (eu.pontos === 1 ? ' ponto' : ' pontos') + '</span><span>' + eu.chegaram + ' de ' + pub.templos.length + ' tropeiros chegaram</span></div>';
       html += '<p class="dica">Leve cada tropeiro à casinha da mesma cor. Quem chega primeiro ganha mais. Pinhão vale 2 e erva-mate 1.</p>';
       html += api.opcoes(fim);
       tela.innerHTML = html;
